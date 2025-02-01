@@ -1,26 +1,33 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
 import BaseLayout from '@/components/layout/BaseLayout';
 
 export default function HomePage() {
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    // Only run on client side
-    if (typeof window !== 'undefined') {
-      if (!isLoading) {
-        if (isAuthenticated) {
-          router.push('/dashboard');
-        } else {
-          router.push('/auth/login');
-        }
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted && !isLoading) {
+      if (isAuthenticated) {
+        router.push('/dashboard');
+      } else {
+        router.push('/auth/login');
       }
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, router, isMounted]);
+
+  // Don't render anything until mounted
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <BaseLayout requireAuth={false}>

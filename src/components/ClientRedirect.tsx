@@ -1,27 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
 
 export default function ClientRedirect() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (mounted && !isLoading) {
-      if (isAuthenticated) {
-        router.replace('/dashboard');
-      } else {
-        router.replace('/auth/login');
+    // Redirect after a short delay to ensure proper hydration
+    const timer = setTimeout(() => {
+      if (!isAuthenticated) {
+        router.push('/auth/login');
       }
-    }
-  }, [isAuthenticated, isLoading, router, mounted]);
+    }, 1500); // 1.5 seconds delay
+
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, router]);
 
   return null;
 }

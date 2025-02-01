@@ -17,9 +17,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="font-sans antialiased">
-        <ReduxProvider>{children}</ReduxProvider>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} data-theme="light">
+      <body className="min-h-screen bg-base-100 font-sans antialiased">
+        <ReduxProvider>
+          <main className="flex min-h-screen flex-col">
+            {children}
+          </main>
+        </ReduxProvider>
       </body>
     </html>
   );

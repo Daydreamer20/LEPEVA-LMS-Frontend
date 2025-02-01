@@ -10,11 +10,14 @@ export default function HomePage() {
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated) {
-        router.push('/dashboard');
-      } else {
-        router.push('/auth/login');
+    // Only run on client side
+    if (typeof window !== 'undefined') {
+      if (!isLoading) {
+        if (isAuthenticated) {
+          router.push('/dashboard');
+        } else {
+          router.push('/auth/login');
+        }
       }
     }
   }, [isAuthenticated, isLoading, router]);

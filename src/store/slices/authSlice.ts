@@ -1,5 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 
+// Define the base URL for API calls
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -9,7 +12,7 @@ interface AuthState {
 
 const initialState: AuthState = {
   isAuthenticated: false,
-  isLoading: true,
+  isLoading: false,
   user: null,
   error: null,
 };
@@ -17,42 +20,74 @@ const initialState: AuthState = {
 // Async thunks
 export const login = createAsyncThunk(
   'auth/login',
-  async ({ email, password }: { email: string; password: string }) => {
-    // TODO: Implement actual API call
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message);
-    return data;
+  async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || 'Login failed');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Login failed');
+    }
   }
 );
 
 export const register = createAsyncThunk(
   'auth/register',
-  async (userData: { email: string; password: string; firstName: string; lastName: string }) => {
-    // TODO: Implement actual API call
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message);
-    return data;
+  async (userData: { email: string; password: string; firstName: string; lastName: string }, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || 'Registration failed');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Registration failed');
+    }
   }
 );
 
 export const getCurrentUser = createAsyncThunk(
   'auth/getCurrentUser',
-  async () => {
-    // TODO: Implement actual API call
-    const response = await fetch('/api/auth/me');
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message);
-    return data;
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/me`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || 'Failed to get user');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Failed to get user');
+    }
   }
 );
 
@@ -62,6 +97,7 @@ const authSlice = createSlice({
   reducers: {
     setAuthenticated: (state, action: PayloadAction<boolean>) => {
       state.isAuthenticated = action.payload;
+      state.isLoading = false;
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
@@ -69,14 +105,17 @@ const authSlice = createSlice({
     setUser: (state, action: PayloadAction<any>) => {
       state.user = action.payload;
       state.isAuthenticated = !!action.payload;
+      state.isLoading = false;
     },
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
+      state.isLoading = false;
     },
     logout: (state) => {
       state.isAuthenticated = false;
       state.user = null;
       state.error = null;
+      state.isLoading = false;
     },
   },
   extraReducers: (builder) => {
@@ -94,7 +133,7 @@ const authSlice = createSlice({
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message || 'Login failed';
+        state.error = action.payload as string || 'Login failed';
       });
 
     // Register
@@ -111,7 +150,7 @@ const authSlice = createSlice({
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message || 'Registration failed';
+        state.error = action.payload as string || 'Registration failed';
       });
 
     // Get Current User
@@ -129,7 +168,7 @@ const authSlice = createSlice({
       .addCase(getCurrentUser.rejected, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = false;
-        state.error = action.error.message || 'Failed to get user';
+        state.error = action.payload as string || 'Failed to get user';
       });
   },
 });
